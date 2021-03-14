@@ -1,6 +1,6 @@
 USE LBD
 
--- criaÁ„o das tabelas
+-- cria√ß√£o das tabelas
 CREATE TABLE PRODUTO(
 CODIGO INT,
 NOME VARCHAR(MAX),
@@ -26,16 +26,16 @@ CONSTRAINT PK_CODIGO_TRANSACAO_PRODUTO_S PRIMARY KEY (CODIGO_TRANSACAO, CODIGO_P
 CONSTRAINT FK_CODIGO_PRODUTO_S FOREIGN KEY (CODIGO_PRODUTO) REFERENCES PRODUTO (CODIGO)
 )
 --insert da tabela PRODUTO
-INSERT INTO PRODUTO (CODIGO, NOME, VALOR) VALUES (1, 'L¡PIS', 2.50), (2, 'BORRACHA', 1.00), (3, 'CANETA', 3.00), (4, 'APONTADOR', 5.00)
+INSERT INTO PRODUTO (CODIGO, NOME, VALOR) VALUES (1, 'L√ÅPIS', 2.50), (2, 'BORRACHA', 1.00), (3, 'CANETA', 3.00), (4, 'APONTADOR', 5.00)
 
---criaÁ„o da procedure
+--cria√ß√£o da procedure
 /*
 Considere a tabela Produto com os seguintes atributos:
 Produto (Codigo | Nome | Valor)
-Considere a tabela ENTRADA e a tabela SAÕDA com os seguintes atributos:
+Considere a tabela ENTRADA e a tabela SA√çDA com os seguintes atributos:
 (Codigo_Transacao | Codigo_Produto | Quantidade | Valor_Total)
 Cada produto que a empresa compra, entra na tabela ENTRADA. Cada produto que a empresa vende, entra na tabela SAIDA.
-Criar uma procedure que receba um cÛdigo (ëeí para ENTRADA e ësí para SAIDA), criar uma exceÁ„o de erro para cÛdigo inv·lido, receba o codigo_transacao, codigo_produto e a quantidade e preencha a tabela correta, com o valor_total de cada transaÁ„o de cada produto.
+Criar uma procedure que receba um c√≥digo (‚Äòe‚Äô para ENTRADA e ‚Äòs‚Äô para SAIDA), criar uma exce√ß√£o de erro para c√≥digo inv√°lido, receba o codigo_transacao, codigo_produto e a quantidade e preencha a tabela correta, com o valor_total de cada transa√ß√£o de cada produto.
 */
 CREATE PROCEDURE SP_ENTRADA_SAIDA(@CODIGO CHAR, @CODIGO_TRANSACAO INT, @CODIGO_PRODUTO INT, @QUANTIDADE INT)
 AS
@@ -48,24 +48,42 @@ BEGIN
 	SET @TODOS_CAMPOS = ' CODIGO_TRANSACAO, CODIGO_PRODUTO, QUANTIDADE, VALOR_TOTAL '
 	IF UPPER(@CODIGO) = 'E'
 	BEGIN
-		SET @QUERY_DINAMICA = 'INSERT INTO ENTRADA ( ' + @TODOS_CAMPOS + ' ) VALUES ( ' + CAST(@CODIGO_TRANSACAO AS VARCHAR) + ' , ' + CAST(@CODIGO_PRODUTO AS VARCHAR) + ' , ' + CAST(@QUANTIDADE AS VARCHAR) + ' , ' + CAST(@VALOR_PRODUTO * @QUANTIDADE AS VARCHAR) + ' )'
-		EXEC(@QUERY_DINAMICA)
+		BEGIN TRY
+			SET @QUERY_DINAMICA = 'INSERT INTO ENTRADA ( ' + @TODOS_CAMPOS + ' ) VALUES ( ''' + CAST(@CODIGO_TRANSACAO AS VARCHAR) + ''' , ''' + CAST(@CODIGO_PRODUTO AS VARCHAR) + ''' , ''' + CAST(@QUANTIDADE AS VARCHAR) + ''' , ''' + CAST(@VALOR_PRODUTO * @QUANTIDADE AS VARCHAR) + ''' )'
+			EXEC(@QUERY_DINAMICA)
+		END TRY
+		BEGIN CATCH
+			IF (ERROR_MESSAGE() LIKE '%primary%')
+			BEGIN
+				RAISERROR('ID produto duplicado!', 16, 1)
+			END
+		END CATCH	
 	END
 	ELSE
 	BEGIN
-		SET @QUERY_DINAMICA = 'INSERT INTO SAIDA ( ' + @TODOS_CAMPOS + ' ) VALUES ( ' + CAST(@CODIGO_TRANSACAO AS VARCHAR) + ' , ' + CAST(@CODIGO_PRODUTO AS VARCHAR) + ' , ' + CAST(@QUANTIDADE AS VARCHAR) + ' , ' + CAST(@VALOR_PRODUTO * @QUANTIDADE AS VARCHAR) + ' )'
-		EXEC(@QUERY_DINAMICA)
+		BEGIN TRY
+			SET @QUERY_DINAMICA = 'INSERT INTO SAIDA ( ' + @TODOS_CAMPOS + ' ) VALUES ( ''' + CAST(@CODIGO_TRANSACAO AS VARCHAR) + ''' , ''' + CAST(@CODIGO_PRODUTO AS VARCHAR) + ''' , ''' + CAST(@QUANTIDADE AS VARCHAR) + ''' , ''' + CAST(@VALOR_PRODUTO * @QUANTIDADE AS VARCHAR) + ''' )'
+			EXEC(@QUERY_DINAMICA)
+		END TRY
+		BEGIN CATCH
+			IF (ERROR_MESSAGE() LIKE '%primary%')
+			BEGIN
+				RAISERROR('ID produto duplicado!', 16, 1)
+			END
+		END CATCH
 	END
 END
 ELSE
 BEGIN
-	RAISERROR('CÛdigo de entrada/saÌda inv·lido!', 16, 1)
+	RAISERROR('C√≥digo de entrada/sa√≠da inv√°lido!', 16, 1)
 END
 
 --executando a procedure em todos os casos
-EXEC SP_ENTRADA_SAIDA 'x', 1, 1, 2 --codigo de entrada/saÌda inv·ldo
+EXEC SP_ENTRADA_SAIDA 'x', 1, 1, 2 --codigo de entrada/sa√≠da inv√°ldo
 EXEC SP_ENTRADA_SAIDA 'e', 1, 1, 2 --entrada de produto
-EXEC SP_ENTRADA_SAIDA 's', 1, 3, 4 --saÌda de produto
+EXEC SP_ENTRADA_SAIDA 's', 1, 3, 4 --sa√≠da de produto
+
+
 
 
 
